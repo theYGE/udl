@@ -27,8 +27,10 @@ if __name__ == "__main__":
 
     # parse args
     args = argparser.parse_args()
-    noise = torch.randn(64, 100, 1, 1, device=DEVICE())
-    model = torch.load(args.model_path, map_location=DEVICE())
-    output = model(noise)
-    image_grid = vutils.make_grid(output, normalize=True)
-    plot_sample_images(image_grid, args.image_path, show_image=args.show_image)
+    for i in range(10):
+        noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+        model = torch.load(args.model_path, map_location=DEVICE())
+        output = model(noise)
+        image_grid = vutils.make_grid(output, padding=100, normalize=True)
+        plot_sample_images(image_grid.cpu(), args.image_path+str(i), show_image=args.show_image)
+
