@@ -1,0 +1,4 @@
+config:  {'epochs': 3}  FID:  491.23809191941217
+config:  {'epochs': 1}  FID:  498.0104029184375
+config:  {'epochs': 2}  FID:  497.3466414874142
+config:  {'epochs': 3}  FID:  493.25287297833796
