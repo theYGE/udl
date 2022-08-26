@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Datasets/CIFAR-10-images" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/early-stopping-pytorch" vcs="Git" />
   </component>
 </project>

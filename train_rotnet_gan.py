@@ -16,15 +16,17 @@ from models import Generator, RotnetDiscriminator
 from utils import (DEVICE, create_rot_transforms, plot_sample_images,
                    weights_init, plot_gan_loss_plots)
 import pickle
-from ray import tune
+# from ray import tune
 from fid_score.fid_score import FidScore
+from itertools import product
+import os
 
 def train(config):
 
     torch.manual_seed(999)
 
     # create a dataset
-    dataset = RotNetDataset("/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/Images",
+    dataset = RotNetDataset("/home/ubuntu/udl/Images",
                             transform=create_rot_transforms(),
                             use_rotations=True)
     netD = RotnetDiscriminator().to(DEVICE())
@@ -35,7 +37,7 @@ def train(config):
     img_list = []
     G_losses = []
     D_losses = []
-    plot_samples = "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/plots/sample/rotnet/epoch.png"
+    plot_samples = "/home/ubuntu/udl/plots/sample/rotnet/image.png"
     iters = 0
     num_epochs = config['epochs']
     real_label = 1
@@ -43,14 +45,16 @@ def train(config):
     device = DEVICE()
     criterion = nn.BCELoss()
     self_inducing_criterion = nn.CrossEntropyLoss()
-    dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=2)
-    optimizerD = Adam(netD.parameters(), lr=0.0002)
-    optimizerG = Adam(netG.parameters(), lr=0.0002)
+    dataloader = DataLoader(dataset, batch_size=config['batch_size'], shuffle=True, num_workers=2)
+    optimizerD = Adam(netD.parameters(), lr=config['lr1'])
+    optimizerG = Adam(netG.parameters(), lr=config['lr2'])
     fixed_noise = torch.randn(64, 100, 1, 1, device=device)
 
+    print('Using device', device)
     # Commented out IPython magic to ensure Python compatibility.
     print("Starting Training Loop...")
     # For each epoch
+
     for epoch in range(num_epochs):
         # For each batch in the dataloader
         for i, data in enumerate(dataloader):
@@ -110,7 +114,7 @@ def train(config):
             optimizerG.step()
 
             # Output training stats
-            if i % 2 == 0:
+            if i % 500 == 0:
                 logger.info(
                     '[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
                     % (epoch, num_epochs, i, len(dataloader), errD.item(),
@@ -121,42 +125,75 @@ def train(config):
             D_losses.append(errD.item())
 
             # Check how the generator is doing by saving G's output on fixed_noise
-            if (iters % 2 == 0) or ((epoch == num_epochs - 1) and
-                                      (i == len(dataloader) - 1)):
-                plot_name = ""
-                with torch.no_grad():
-                    fake = netG(fixed_noise).detach().cpu()
-                    output = vutils.make_grid(fake, padding=2, normalize=True)
-                    _path_to_plot = plot_samples.split(".")
-                    path_to_samples = f"{_path_to_plot[0]}_{epoch}_{iters}.{_path_to_plot[-1]}"
-                    plot_sample_images(output, path_to_samples)
+            # if (iters % 2 == 0) or ((epoch == num_epochs - 1) and
+            #                           (i == len(dataloader) - 1)):
+                # plot_name = ""
+                # with torch.no_grad():
+                #     fake = netG(fixed_noise).detach().cpu()
+                #     output = vutils.make_grid(fake, padding=2, normalize=True)
+                #     _path_to_plot = plot_samples.split(".")
+                #     path_to_samples = f"{_path_to_plot[0]}_{epoch}_{iters}.{_path_to_plot[-1]}"
+                #     plot_sample_images(output, path_to_samples)
 
             iters += 1
+    for i in range(1000):
+        with torch.no_grad():
+            noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+            fake = netG(noise).detach().cpu()
+            output = vutils.make_grid(fake, padding=2, normalize=True)
+            _path_to_plot = plot_samples.split(".")
+            path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
+            plot_sample_images(output, path_to_samples)
+        # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+        # model = torch.load(args.model_path, map_location=DEVICE())
+        # output = model(noise)
+        # image_grid = vutils.make_grid(output, padding=100, normalize=True)
+        # plot_sample_images(image_grid.cpu(), args.image_path+str(i), show_image=args.show_image)
+
     fid = FidScore(
         paths=[
-            '/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/Images',
-            '/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/plots/sample/rotnet'
-        ]
+            '/home/ubuntu/udl/Images',
+            '/home/ubuntu/udl/plots/sample/rotnet'
+        ],
+        device=device,
+        batch_size=32
     )
     fid = fid.calculate_fid_score()
-    print(fid)
-    plot_gan_loss_plots(D_losses,G_losses, "loss")
-    torch.save(netG, "generator_rotnet.pt")
-    tune.report(fid = fid)
+    print('FID: ', fid)
+    with open('result.txt', 'a') as f:
+        print('config: ', config, ' FID: ', fid, file=f)
+    # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
 
-    with open('losses.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
-        pickle.dump([D_losses, G_losses ], f)
+    # plot_gan_loss_plots(D_losses,G_losses, "loss")
+    # torch.save(netG, "generator_rotnet.pt")
+    # tune.report(fid = fid)
+
+    # with open('losses.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
+    #     pickle.dump([D_losses, G_losses ], f)
 
 
 if __name__ == '__main__':
+            # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+    d = {
+        'epochs': [15200, 250],
+        'batch_size': [64, 128, 256, 512],
+        'lr1': [1e-3, 1e-4, 1e-5],
+        'lr2': [1e-3, 1e-4, 1e-5]
+    }
+    configs = [dict(zip(d, v)) for v in product(*d.values())]
+    for config in configs:
+        os.system('rm -rf plots/')
+        print(config)
+        train(config)
     # train(config={
     #     'epochs': 2
     # })
-    analysis = tune.run(
-        train, config = {
-            'epochs': tune.grid_search([1,2,3])
-        }
-    )
-    print(analysis.get_best_config(metric = "fid", mode="min"))
+
+    # analysis = tune.run(
+    #     train, config = {
+    #         'epochs': tune.grid_search([1,2,3])
+    #     }
+    # )
+    # print(analysis.get_best_config(metric = "fid", mode="min"))
 
 

@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # parse args
     args = argparser.parse_args()
-    for i in range(10):
+    for i in range(200):
         noise = torch.randn(1, 100, 1, 1, device=DEVICE())
         model = torch.load(args.model_path, map_location=DEVICE())
         output = model(noise)

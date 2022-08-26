@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.7 (SSLGAN)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.8 (venv)" project-jdk-type="Python SDK" />
   <component name="UnattendedHostPersistenceState">
     <option name="openedFilesInfos">
       <list>
         <OpenedFileInfo>
           <option name="caretOffset" value="0" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/README.md" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/result.txt" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="707" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/get_split.py" />
         </OpenedFileInfo>
         <OpenedFileInfo>
           <option name="caretOffset" value="0" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/vanilla.tensor" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/README.md" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="1575" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/utils.py" />
-        </OpenedFileInfo>
-        <OpenedFileInfo>
-          <option name="caretOffset" value="1288" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/viz.py" />
+          <option name="caretOffset" value="1608" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/train_rotnet_gan.py" />
         </OpenedFileInfo>
       </list>
     </option>
