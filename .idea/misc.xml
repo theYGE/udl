@@ -6,7 +6,7 @@
       <list>
         <OpenedFileInfo>
           <option name="caretOffset" value="0" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/result.txt" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/README.md" />
         </OpenedFileInfo>
         <OpenedFileInfo>
           <option name="caretOffset" value="707" />
@@ -14,10 +14,14 @@
         </OpenedFileInfo>
         <OpenedFileInfo>
           <option name="caretOffset" value="0" />
-          <option name="fileUrl" value="file://$PROJECT_DIR$/README.md" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/train_vanilla_gan.py" />
         </OpenedFileInfo>
         <OpenedFileInfo>
-          <option name="caretOffset" value="1608" />
+          <option name="caretOffset" value="0" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/result.txt" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="346" />
           <option name="fileUrl" value="file://$PROJECT_DIR$/train_rotnet_gan.py" />
         </OpenedFileInfo>
       </list>

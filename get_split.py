@@ -10,7 +10,7 @@ from shutil import copy2  # to copy the images
 from logger import logger
 
 PATH_TO_DATASET = "./Datasets/CIFAR-10-images/"
-NEW_PATH = "./Images"
+NEW_PATH = "./Images_Test"
 path_to_images = Path(PATH_TO_DATASET)
 
 _all_images = [i for i in path_to_images.glob("*/*/*.jpg")]
@@ -25,3 +25,6 @@ for idx, i in enumerate(sampled_images):
     logger.info(f"Copying File {i} ====> {new_file_name}")
 
     copy2(i, new_file_name)
+
+    if idx > 1000:
+        break

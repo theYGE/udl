@@ -20,6 +20,7 @@ import pickle
 from fid_score.fid_score import FidScore
 from itertools import product
 import os
+from pytorchtools import EarlyStopping
 
 def train(config):
 
@@ -54,7 +55,7 @@ def train(config):
     # Commented out IPython magic to ensure Python compatibility.
     print("Starting Training Loop...")
     # For each epoch
-
+    early_stopping = EarlyStopping(patience=5, verbose = True)
     for epoch in range(num_epochs):
         # For each batch in the dataloader
         for i, data in enumerate(dataloader):
@@ -114,7 +115,7 @@ def train(config):
             optimizerG.step()
 
             # Output training stats
-            if i % 500 == 0:
+            if i % 100 == 0:
                 logger.info(
                     '[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
                     % (epoch, num_epochs, i, len(dataloader), errD.item(),
@@ -136,6 +137,42 @@ def train(config):
                 #     plot_sample_images(output, path_to_samples)
 
             iters += 1
+
+        os.system('rm -rf plots/')
+        for i in range(1000):
+            with torch.no_grad():
+                noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+                fake = netG(noise).detach().cpu()
+                output = vutils.make_grid(fake, padding=2, normalize=True)
+                _path_to_plot = plot_samples.split(".")
+                path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
+                plot_sample_images(output, path_to_samples)
+            # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+            # model = torch.load(args.model_path, map_location=DEVICE())
+            # output = model(noise)
+            # image_grid = vutils.make_grid(output, padding=100, normalize=True)
+            # plot_sample_images(image_grid.cpu(), args.image_path+str(i), show_image=args.show_image)
+
+        fid = FidScore(
+            paths=[
+                '/home/ubuntu/udl/Images_Test',
+                '/home/ubuntu/udl/plots/sample/rotnet'
+            ],
+            device=device,
+            batch_size=32
+        )
+        fid = fid.calculate_fid_score()
+        early_stopping(fid, netG)
+        print('FID: ', fid, ' for epoch: ', epoch)
+        if early_stopping.early_stop:
+            print('Stopping after epochs', epoch)
+            print('FID: ', fid)
+            with open('result.txt', 'a') as f:
+                print('config: ', config, ' FID: ', fid, file=f)
+            break
+
+
+    os.system('rm -rf plots/')
     for i in range(1000):
         with torch.no_grad():
             noise = torch.randn(1, 100, 1, 1, device=DEVICE())
@@ -152,7 +189,7 @@ def train(config):
 
     fid = FidScore(
         paths=[
-            '/home/ubuntu/udl/Images',
+            '/home/ubuntu/udl/Images_Test',
             '/home/ubuntu/udl/plots/sample/rotnet'
         ],
         device=device,
@@ -175,7 +212,7 @@ def train(config):
 if __name__ == '__main__':
             # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
     d = {
-        'epochs': [15200, 250],
+        'epochs': [150, 200, 250],
         'batch_size': [64, 128, 256, 512],
         'lr1': [1e-3, 1e-4, 1e-5],
         'lr2': [1e-3, 1e-4, 1e-5]
