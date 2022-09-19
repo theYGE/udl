@@ -56,7 +56,7 @@ class RotationAndContrastiveDataset(Dataset):
         # if use rotation true rotate image to the angle.
         if self.use_rotation:
             angle = self.rotations[index]
-            rotated_image = rotate(image, angle * 90.0)
+            rotated_image = rotate(rotated_image, angle * 90.0)
 
         # apply transformation to normalize images
         if self.rotation_transform:
@@ -73,7 +73,7 @@ class RotationAndContrastiveDataset(Dataset):
         # normalize images to aling with augmented images
         image = self.normalize(image)
 
-        return image, rotated_image, augmented
+        return rotated_image, angle, image, augmented
 
 
 
