@@ -16,6 +16,67 @@ from torchvision.transforms.functional import rotate
 from utils import create_rot_transforms
 
 
+class RotationAndContrastiveDataset(Dataset):
+    """Combined Dataset class for the rotation net and contrastive GANs in one class"""
+    def __init__(self,
+                 path_to_images,
+                 given_transforms=None,
+                 use_rotations=False) -> None:
+        super().__init__()
+        # define the image paths, rotations for the images
+        self.images_path = [i for i in Path(path_to_images).glob("*.jpg")]
+        self.rotations = np.random.randint(0, 4, size=len(self.images_path))
+
+        # transformations on the image and flag if rotation is required to cary out or not
+        assert transforms is not None, "You need to provide some transformations for the contrastive learning to work"
+        self.rotation_transform = given_transforms[0]
+        self.contrastive_transform = given_transforms[1]
+        self.use_rotation = use_rotations
+
+
+        # pipeline to convert image to tensor
+        self.pil_to_tensor_transform = transforms.Compose([
+            transforms.PILToTensor(),
+            transforms.Resize(size=(64, 64)),
+            transforms.ConvertImageDtype(torch.float32)
+        ])
+        # normalizer for normalization of images
+        self.normalize = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+
+    def __len__(self):
+        return len(self.images_path)
+
+    def __getitem__(self, index):
+        if torch.is_tensor(index):
+            index = index.tolist()
+
+        # open image
+        rotated_image = Image.open(self.images_path[index])
+        angle = 0
+        # if use rotation true rotate image to the angle.
+        if self.use_rotation:
+            angle = self.rotations[index]
+            rotated_image = rotate(image, angle * 90.0)
+
+        # apply transformation to normalize images
+        if self.rotation_transform:
+            rotated_image = self.rotation_transform(rotated_image)
+
+        # return image, angle
+
+        # open image and convert it to tensor
+        image = Image.open(self.images_path[index])
+        image = self.pil_to_tensor_transform(image)
+        # transform the image
+        if self.contrastive_transform:
+            augmented = self.contrastive_transform(image)
+        # normalize images to aling with augmented images
+        image = self.normalize(image)
+
+        return image, rotated_image, augmented
+
+
+
 class RotNetDataset(Dataset):
     """Dataset class for the rotation net and vanilla GAN"""
     def __init__(self,
