@@ -96,8 +96,28 @@ def train(config):
             errD_real = criterion(output.view(-1), label)
             # compute rotation error
             errD_rotation = self_inducing_criterion(angle_pred, target_label)
+
+            #Contr Part
+            real_cpu = data[2].to(device)
+            augmented_image = data[3].to(device)
+            b_size = real_cpu.size(0)
+            label = torch.full((b_size,),
+                               real_label,
+                               dtype=torch.float,
+                               device=device)
+            # forward pass for the real samples over discriminator.
+            output, projection = netD_contr(real_cpu, self_learning=True)
+            aug_projection = netD_contr.forward(augmented_image,
+                                          self_learning=True,
+                                          discriminator=False)
+            # Calculate loss on all-real batch
+            errD_real_contr = criterion(output.view(-1), label)
+            errD_ssl_contr = self_inducing_criterion_contr(projection,
+                                               aug_projection)  # contrastive loss
+
+
             # Calculate gradients for D in backward pass
-            errD_real_rot = errD_real + errD_rotation
+            errD_real_rot = errD_real + errD_rotation + errD_real_contr + errD_ssl_contr
             errD_real_rot.backward()
             D_x = output.mean().item()
 
@@ -109,8 +129,10 @@ def train(config):
             label.fill_(fake_label)
             # Classify all fake batch with D
             output = netD_rotnet(fake.detach()).view(-1)
+            output_contr = netD_contr(fake.detach()).view(-1)
+
             # Calculate D's loss on the all-fake batch
-            errD_fake = criterion(output, label)
+            errD_fake = criterion(output, label) + criterion(output_contr, label)
             # Calculate the gradients for this batch, accumulated (summed) with previous gradients
             errD_fake.backward()
             D_G_z1 = output.mean().item()
@@ -125,8 +147,9 @@ def train(config):
             label.fill_(real_label)  # fake labels are real for generator cost
             # Since we just updated D, perform another forward pass of all-fake batch through D
             output = netD_rotnet(fake).view(-1)
+            output_contr = netD_contr(fake).view(-1)
             # Calculate G's loss based on this output
-            errG = criterion(output, label)
+            errG = criterion(output, label) + criterion(output_contr, label)
             # Calculate gradients for G
             errG.backward()
             D_G_z2 = output.mean().item()
