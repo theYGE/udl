@@ -21,7 +21,7 @@ torch.manual_seed(999)
 
 # create a dataset
 dataset = ContrastiveDataset(
-    "images",
+    "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/Images_Test",
     transform=create_con_transforms(),
 )
 netD = ContrastiveDiscriminator().to(DEVICE())
@@ -109,7 +109,7 @@ for epoch in range(num_epochs):
         optimizerG.step()
 
         # Output training stats
-        if i % 10 == 0:
+        if i % 2 == 0:
             logger.info(
                 '[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
                 % (epoch, num_epochs, i, len(dataloader), errD.item(),

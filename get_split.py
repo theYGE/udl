@@ -26,5 +26,5 @@ for idx, i in enumerate(sampled_images):
 
     copy2(i, new_file_name)
 
-    if idx > 1000:
+    if idx > 256:
         break

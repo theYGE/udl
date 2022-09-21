@@ -26,8 +26,11 @@ class ContrastiveLoss(nn.Module):
                                                 representations.unsqueeze(0),
                                                 dim=2)
 
-        sim_ij = torch.diag(similarity_matrix, self.batch_size)
-        sim_ji = torch.diag(similarity_matrix, -self.batch_size)
+        if similarity_matrix.size(0) < self.batch_size:
+            return 0
+        else:
+            sim_ij = torch.diag(similarity_matrix, self.batch_size)
+            sim_ji = torch.diag(similarity_matrix, -self.batch_size)
 
         positives = torch.cat([sim_ij, sim_ji], dim=0)
 
