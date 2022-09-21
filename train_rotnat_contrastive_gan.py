@@ -29,12 +29,13 @@ def train(config):
 
     # create a dataset
     images_path = "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/Images_Test"
+    samples_path = "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/plots/sample/rotnet_contr"
     # dataset = RotNetDataset(images_path,
     #                         transform=create_rot_transforms(),
     #                         use_rotations=True)
 
     dataset = RotationAndContrastiveDataset(
-        images_path,
+        "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/Images_Test",
         given_transforms= [
             create_rot_transforms(),
             create_con_transforms()
@@ -54,7 +55,7 @@ def train(config):
     img_list = []
     G_losses = []
     D_losses = []
-    plot_samples = "/home/ubuntu/udl/plots/sample/rotnet_contr/image.png"
+    plot_samples = "/Users/oleksandrmakarevych/Documents/AWS_Keys/Code/SSLGAN/plots/sample/rotnet_contr/image.png"
     iters = 0
     num_epochs = config['epochs']
     real_label = 1
@@ -62,10 +63,13 @@ def train(config):
     device = DEVICE()
     criterion = nn.BCELoss()
     self_inducing_criterion = nn.CrossEntropyLoss()
-    self_inducing_criterion_contr = ContrastiveLoss(64, temperature=0.5)
+    self_inducing_criterion_contr = ContrastiveLoss(config['batch_size'], temperature=0.5)
 
     dataloader = DataLoader(dataset, batch_size=config['batch_size'], shuffle=True, num_workers=2)
-    optimizerD = Adam(netD_rotnet.parameters(), lr=config['lr1'])
+    optimizerD = Adam([
+                {'params': netD_rotnet.parameters()},
+                {'params': netD_contr.parameters()}
+            ], lr=config['lr1'])
     optimizerG = Adam(netG.parameters(), lr=config['lr2'])
     fixed_noise = torch.randn(64, 100, 1, 1, device=device)
 
@@ -73,7 +77,7 @@ def train(config):
     # Commented out IPython magic to ensure Python compatibility.
     print("Starting Training Loop...")
     # For each epoch
-    # early_stopping = EarlyStopping(patience=5, verbose = True)
+    early_stopping = EarlyStopping(patience=5, verbose = True)
     for epoch in range(num_epochs):
         # For each batch in the dataloader
         for i, data in enumerate(dataloader):
@@ -98,6 +102,7 @@ def train(config):
             errD_rotation = self_inducing_criterion(angle_pred, target_label)
 
             #Contr Part
+            netD_contr.zero_grad()
             real_cpu = data[2].to(device)
             augmented_image = data[3].to(device)
             b_size = real_cpu.size(0)
@@ -112,6 +117,7 @@ def train(config):
                                           discriminator=False)
             # Calculate loss on all-real batch
             errD_real_contr = criterion(output.view(-1), label)
+            print(projection.size(), aug_projection.size())
             errD_ssl_contr = self_inducing_criterion_contr(projection,
                                                aug_projection)  # contrastive loss
 
@@ -182,67 +188,67 @@ def train(config):
 
             iters += 1
 
-        # os.system('rm -rf plots/')
-        # for i in range(1000):
-        #     with torch.no_grad():
-        #         noise = torch.randn(1, 100, 1, 1, device=DEVICE())
-        #         fake = netG(noise).detach().cpu()
-        #         output = vutils.make_grid(fake, padding=2, normalize=True)
-        #         _path_to_plot = plot_samples.split(".")
-        #         path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
-        #         plot_sample_images(output, path_to_samples)
+        os.system('rm -rf plots/')
+        for i in range(100):
+            with torch.no_grad():
+                noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+                fake = netG(noise).detach().cpu()
+                output = vutils.make_grid(fake, padding=2, normalize=True)
+                _path_to_plot = plot_samples.split(".")
+                path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
+                plot_sample_images(output, path_to_samples)
             # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
             # model = torch.load(args.model_path, map_location=DEVICE())
             # output = model(noise)
             # image_grid = vutils.make_grid(output, padding=100, normalize=True)
             # plot_sample_images(image_grid.cpu(), args.image_path+str(i), show_image=args.show_image)
 
-        # fid = FidScore(
-        #     paths=[
-        #         '/home/ubuntu/udl/Images_Test',
-        #         '/home/ubuntu/udl/plots/sample/rotnet'
-        #     ],
-        #     device=device,
-        #     batch_size=32
-        # )
-        # fid = fid.calculate_fid_score()
-        # early_stopping(fid, netG)
-        # print('FID: ', fid, ' for epoch: ', epoch)
-        # if early_stopping.early_stop:
-        #     print('Stopping after epochs', epoch)
-        #     print('FID: ', fid)
-        #     with open('result.txt', 'a') as f:
-        #         print('config: ', config, ' FID: ', fid, file=f)
-        #     break
+        fid = FidScore(
+            paths=[
+                images_path,
+                samples_path
+            ],
+            device=device,
+            batch_size=32
+        )
+        fid = fid.calculate_fid_score()
+        early_stopping(fid, netG)
+        print('FID: ', fid, ' for epoch: ', epoch)
+        if early_stopping.early_stop:
+            print('Stopping after epochs', epoch)
+            print('FID: ', fid)
+            with open('result_final.txt', 'a') as f:
+                print('config: ', config, ' FID: ', fid, file=f)
+            break
 
 
-    # os.system('rm -rf plots/')
-    # for i in range(1000):
-    #     with torch.no_grad():
-    #         noise = torch.randn(1, 100, 1, 1, device=DEVICE())
-    #         fake = netG(noise).detach().cpu()
-    #         output = vutils.make_grid(fake, padding=2, normalize=True)
-    #         _path_to_plot = plot_samples.split(".")
-    #         path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
-    #         plot_sample_images(output, path_to_samples)
+    os.system('rm -rf plots/')
+    for i in range(1000):
+        with torch.no_grad():
+            noise = torch.randn(1, 100, 1, 1, device=DEVICE())
+            fake = netG(noise).detach().cpu()
+            output = vutils.make_grid(fake, padding=2, normalize=True)
+            _path_to_plot = plot_samples.split(".")
+            path_to_samples = f"{_path_to_plot[0]}_{i}.{_path_to_plot[-1]}"
+            plot_sample_images(output, path_to_samples)
         # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
         # model = torch.load(args.model_path, map_location=DEVICE())
         # output = model(noise)
         # image_grid = vutils.make_grid(output, padding=100, normalize=True)
         # plot_sample_images(image_grid.cpu(), args.image_path+str(i), show_image=args.show_image)
 
-    # fid = FidScore(
-    #     paths=[
-    #         '/home/ubuntu/udl/Images_Test',
-    #         '/home/ubuntu/udl/plots/sample/rotnet'
-    #     ],
-    #     device=device,
-    #     batch_size=32
-    # )
-    # fid = fid.calculate_fid_score()
-    # print('FID: ', fid)
-    # with open('result.txt', 'a') as f:
-    #     print('config: ', config, ' FID: ', fid, file=f)
+    fid = FidScore(
+        paths=[
+             images_path,
+             samples_path
+        ],
+        device=device,
+        batch_size=32
+    )
+    fid = fid.calculate_fid_score()
+    print('FID: ', fid)
+    with open('result_final.txt', 'a') as f:
+        print('config: ', config, ' FID: ', fid, file=f)
 
 
     # noise = torch.randn(1, 100, 1, 1, device=DEVICE())
