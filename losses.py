@@ -26,7 +26,7 @@ class ContrastiveLoss(nn.Module):
                                                 representations.unsqueeze(0),
                                                 dim=2)
 
-        if similarity_matrix.size(0) < self.batch_size:
+        if not similarity_matrix.size(0) & self.batch_size == 0 or not similarity_matrix.size(1) & self.batch_size == 0:
             return 0
         else:
             sim_ij = torch.diag(similarity_matrix, self.batch_size)
