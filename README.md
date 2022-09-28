@@ -17,14 +17,13 @@ First you need to modify the script by entering the path to dataset and the path
 ```bash
 python3 get_split.py
 ```
-```
 ### RotnetGAN
 To execute the training script you can simply run _train\_rotnet\_gan.py_. It will train RotnetGAN.
 ```bash
 python3 train_rotnet_gan.py
 ```
 ### Rotation+ContrastiveGAN
-To execute the training script you can simply run _train\_contrastive\_gan.py_. It will train ContrastiveGAN.
+To execute the training script you can simply run command below. It will train ContrastiveGAN.
 ```bash
 python3 train_rotnat_contrastive_gan.py
 ```
